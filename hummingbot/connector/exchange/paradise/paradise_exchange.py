@@ -306,23 +306,24 @@ class ParadiseExchange(ExchangePyBase):
         trading_pair_rules = exchange_info_dict        
         retval = []
         for rule in trading_pair_rules:
-            try:                
-                trading_pair = await self.trading_pair_associated_to_exchange_symbol(rule.get("symbol"))
+            if rule.get("symbol") != "K_SATS-USD":
+                try:                
+                    trading_pair = await self.trading_pair_associated_to_exchange_symbol(rule.get("symbol"))
 
-                min_order_size = rule.get("minOrderSize")
-                min_price_increment = rule.get("minPriceIncrement")
-                min_base_amount_increment = rule.get("minSizeIncrement")
-                min_notional_size = rule.get("minValidPrice")
+                    min_order_size = rule.get("minOrderSize")
+                    min_price_increment = rule.get("minPriceIncrement")
+                    min_base_amount_increment = rule.get("minSizeIncrement")
+                    min_notional_size = rule.get("minValidPrice")
 
-                retval.append(
-                    TradingRule(trading_pair,
-                                min_order_size=min_order_size,
-                                min_price_increment=Decimal(min_price_increment),
-                                min_base_amount_increment=Decimal(min_base_amount_increment),
-                                min_notional_size=Decimal(min_notional_size)))
+                    retval.append(
+                        TradingRule(trading_pair,
+                                    min_order_size=min_order_size,
+                                    min_price_increment=Decimal(min_price_increment),
+                                    min_base_amount_increment=Decimal(min_base_amount_increment),
+                                    min_notional_size=Decimal(min_notional_size)))
 
-            except Exception:
-                self.logger().exception(f"Error parsing the trading pair rule {rule}. Skipping.")
+                except Exception:
+                    self.logger().exception(f"Error parsing the trading pair rule {rule}. Skipping.")
         return retval
 
     async def _status_polling_loop_fetch_updates(self):
@@ -572,8 +573,10 @@ class ParadiseExchange(ExchangePyBase):
 
     def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):        
         mapping = bidict()        
+        # with open('test.txt', 'w') as file:
+        #         file.write(str(exchange_info))
         for symbol_data in filter(paradise_utils.is_exchange_information_valid, exchange_info):            
-            if symbol_data["base"] != 'SATS':
+            if symbol_data["symbol"] != "K_SATS-USD":
                 mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(base=symbol_data["base"],
                                                                         quote=symbol_data["quote"])
         self._set_trading_pair_symbol_map(mapping)
