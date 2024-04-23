@@ -24,7 +24,7 @@ class SimpleOrder(ScriptStrategyBase):
 
     # Key Parameters
     order_amount_usd = Decimal(25)
-    exchange = "paradise_testnet"
+    exchange = "btse_testnet"
     base = "ETH"
     quote = "USDT"
     side = "buy"

@@ -52,7 +52,7 @@ class BtseAuth(AuthBase):
     def header_for_authentication(self, request: RESTRequest) -> Dict[str, str]:
         lang = "latin-1"
         nonce = str(int(time.time() * 1000))
-        path = request.url.replace("https://api.btse.com/spot", "").replace("https://api.testbtse.io/spot", "")
+        path = request.url.replace("https://api.btse.com/spot", "").replace("https://testapi.btse.io/spot", "")
         # if request.params != None:
         #     path += '?' + str(request.params)
         message = path + nonce

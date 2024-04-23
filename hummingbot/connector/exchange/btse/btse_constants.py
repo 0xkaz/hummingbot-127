@@ -9,17 +9,17 @@ MAX_ORDER_ID_LEN = 32
 # Base URL
 REST_URLS = {
     "btse_main": "https://api.btse.com",
-    "btse_testnet": "https://api.testbtse.io"
+    "btse_testnet": "https://testapi.btse.io"
 }
 
 WSS_URL = {
     "btse_main": "wss://ws.btse.com/ws/spot",
-    "btse_testnet": "wss://ws.testbtse.io/ws/spot"
+    "btse_testnet": "wss://testws.btse.io/ws/spot"
 }
 
 WSS_URL_OB = {
     "btse_main": "wss://ws.btse.com/ws/oss/spot",
-    "btse_testnet": "wss://ws.testbtse.io/ws/oss/spot"
+    "btse_testnet": "wss://testws.btse.io/ws/oss/spot"
 }
 
 PUBLIC_API_VERSION = "v3"
