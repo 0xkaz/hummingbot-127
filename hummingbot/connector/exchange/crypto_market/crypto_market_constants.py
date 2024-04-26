@@ -1,25 +1,25 @@
 from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
 from hummingbot.core.data_type.in_flight_order import OrderState
 
-DEFAULT_DOMAIN = "btse_main"
+DEFAULT_DOMAIN = "crypto_market_main"
 
 HBOT_ORDER_ID_PREFIX = "c-RISPYUKI"
 MAX_ORDER_ID_LEN = 32
 
 # Base URL
 REST_URLS = {
-    "btse_main": "https://api.btse.com",
-    "btse_testnet": "https://testapi.btse.io"
+    "crypto_market_main": "https://api.crypto-market.exchange",
+    "crypto_market_testnet": "https://test-api.crypto-market.exchange/"
 }
 
 WSS_URL = {
-    "btse_main": "wss://ws.btse.com/ws/spot",
-    "btse_testnet": "wss://testws.btse.io/ws/spot"
+    "crypto_market_main": "wss://ws.crypto-market.exchange/ws/spot",
+    "crypto_market_testnet": "wss://test-ws.crypto-market.exchange/ws/spot"
 }
 
 WSS_URL_OB = {
-    "btse_main": "wss://ws.btse.com/ws/oss/spot",
-    "btse_testnet": "wss://testws.btse.io/ws/oss/spot"
+    "crypto_market_main": "wss://ws.crypto-market.exchange/ws/oss/spot",
+    "crypto_market_testnet": "wss://test-ws.crypto-market.exchange/ws/oss/spot"
 }
 
 PUBLIC_API_VERSION = "v3"
@@ -42,7 +42,7 @@ CRYPTOMARKET_USER_STREAM_PATH_URL = "/ws/spot"
 
 WS_HEARTBEAT_TIME_INTERVAL = 30
 
-# Btse params
+# CryptoMarket params
 
 SIDE_BUY = "BUY"
 SIDE_SELL = "SELL"

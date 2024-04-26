@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 from bidict import bidict
 
 from hummingbot.connector.constants import s_decimal_NaN
-from hummingbot.connector.exchange.paradise import (
-    paradise_constants as CONSTANTS,
-    paradise_utils,
-    paradise_web_utils as web_utils,
+from hummingbot.connector.exchange.crypto_market import (
+    crypto_market_constants as CONSTANTS,
+    crypto_market_utils,
+    crypto_market_web_utils as web_utils,
 )
-from hummingbot.connector.exchange.paradise.paradise_api_order_book_data_source import ParadiseAPIOrderBookDataSource
-from hummingbot.connector.exchange.paradise.paradise_api_user_stream_data_source import ParadiseAPIUserStreamDataSource
-from hummingbot.connector.exchange.paradise.paradise_auth import ParadiseAuth
+from hummingbot.connector.exchange.crypto_market.crypto_market_api_order_book_data_source import CryptoMarketAPIOrderBookDataSource
+from hummingbot.connector.exchange.crypto_market.crypto_market_api_user_stream_data_source import CryptoMarketAPIUserStreamDataSource
+from hummingbot.connector.exchange.crypto_market.crypto_market_auth import CryptoMarketAuth
 from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import TradeFillOrderDetails, combine_to_hb_trading_pair
@@ -30,46 +30,46 @@ if TYPE_CHECKING:
     from hummingbot.client.config.config_helpers import ClientConfigAdapter
 
 
-class ParadiseExchange(ExchangePyBase):
+class CryptoMarketExchange(ExchangePyBase):
     UPDATE_ORDER_STATUS_MIN_INTERVAL = 10.0
 
     web_utils = web_utils
 
     def __init__(self,
                  client_config_map: "ClientConfigAdapter",
-                 paradise_api_key: str,
-                 paradise_api_secret: str,
+                 crypto_market_api_key: str,
+                 crypto_market_api_secret: str,
                  trading_pairs: Optional[List[str]] = None,
                  trading_required: bool = True,
                  domain: str = CONSTANTS.DEFAULT_DOMAIN,
                  ):
-        self.api_key = paradise_api_key
-        self.secret_key = paradise_api_secret
+        self.api_key = crypto_market_api_key
+        self.secret_key = crypto_market_api_secret
         self._domain = domain
         self._trading_required = trading_required
         self._trading_pairs = trading_pairs
-        self._last_trades_poll_paradise_timestamp = 1569888.0
+        self._last_trades_poll_crypto_market_timestamp = 1569888.0
         super().__init__(client_config_map)
 
     @staticmethod
-    def paradise_order_type(order_type: OrderType) -> str:
+    def crypto_market_order_type(order_type: OrderType) -> str:
         return order_type.name.upper()
 
     @staticmethod
-    def to_hb_order_type(paradise_type: str) -> OrderType:
-        return OrderType[paradise_type]
+    def to_hb_order_type(crypto_market_type: str) -> OrderType:
+        return OrderType[crypto_market_type]
 
     @property
     def authenticator(self):
-        return ParadiseAuth(
+        return CryptoMarketAuth(
             api_key=self.api_key,
             secret_key=self.secret_key,
             time_provider=self._time_synchronizer)
 
     @property
     def name(self) -> str:
-        if self._domain == "paradise_main":
-            return "paradise"
+        if self._domain == "crypto_market_main":
+            return "crypto_market"
         else:
             return f"{self._domain}"
 
@@ -144,14 +144,14 @@ class ParadiseExchange(ExchangePyBase):
             auth=self._auth)
 
     def _create_order_book_data_source(self) -> OrderBookTrackerDataSource:
-        return ParadiseAPIOrderBookDataSource(
+        return CryptoMarketAPIOrderBookDataSource(
             trading_pairs=self._trading_pairs,
             connector=self,
             domain=self.domain,
             api_factory=self._web_assistants_factory)
 
     def _create_user_stream_data_source(self) -> UserStreamTrackerDataSource:        
-        return ParadiseAPIUserStreamDataSource(
+        return CryptoMarketAPIUserStreamDataSource(
             auth=self._auth,
             time_synchronizer=self._time_synchronizer,
             throttler=self._throttler,            
@@ -181,7 +181,7 @@ class ParadiseExchange(ExchangePyBase):
         order_result = None
         amount_str = f"{round(amount, 8):f}"
         price_str = f"{round(price, 8):f}"                
-        type_str = ParadiseExchange.paradise_order_type(order_type)
+        type_str = CryptoMarketExchange.crypto_market_order_type(order_type)
         side_str = CONSTANTS.SIDE_BUY if trade_type is TradeType.BUY else CONSTANTS.SIDE_SELL
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         api_params = {"symbol": symbol,
@@ -218,9 +218,8 @@ class ParadiseExchange(ExchangePyBase):
         cancel_result = await self._api_delete(
             path_url=CONSTANTS.ORDER_PATH_URL,
             params=api_params,
-            is_auth_required=True)    
-        print(f'ordercancel result', cancel_result)            
-        if len(cancel_result) == 0 or cancel_result[0].get("status") == CONSTANTS.ORDER_STATE["ORDER_CANCELLED"]:
+            is_auth_required=True)                
+        if len(cancel_result) > 0 and cancel_result[0].get("status") == CONSTANTS.ORDER_STATE["ORDER_CANCELLED"]:
             return True
         return False    
 
@@ -347,8 +346,8 @@ class ParadiseExchange(ExchangePyBase):
             try:
                 event_type = event_message.get("topic")
                 event_message_data = event_message.get("data")[0]
-                # Refer to https://github.com/paradise-exchange/paradise-official-api-docs/blob/master/user-data-stream.md
-                # As per the order update section in Paradise the ID of the order being canceled is under the "C" key
+                # Refer to https://github.com/crypto_market-exchange/crypto_market-official-api-docs/blob/master/user-data-stream.md
+                # As per the order update section in CryptoMarket the ID of the order being canceled is under the "C" key
                 if event_type == "fills":
                     execution_type = event_message.get("topic")
                     if execution_type != "CANCELED":
@@ -399,10 +398,10 @@ class ParadiseExchange(ExchangePyBase):
     async def _update_order_fills_from_trades(self):
         """
         This is intended to be a backup measure to get filled events with trade ID for orders,
-        in case Paradise's user stream events are not working.
+        in case CryptoMarket's user stream events are not working.
         NOTE: It is not required to copy this functionality in other connectors.
         This is separated from _update_order_status which only updates the order status without producing filled
-        events, since Paradise's get order endpoint does not return trade IDs.
+        events, since CryptoMarket's get order endpoint does not return trade IDs.
         The minimum poll interval for order status is 10 seconds.
         """
         small_interval_last_tick = self._last_poll_timestamp / self.UPDATE_ORDER_STATUS_MIN_INTERVAL
@@ -412,8 +411,8 @@ class ParadiseExchange(ExchangePyBase):
 
         if (long_interval_current_tick > long_interval_last_tick
                 or (self.in_flight_orders and small_interval_current_tick > small_interval_last_tick)):
-            query_time = int(self._last_trades_poll_paradise_timestamp * 1e6)            
-            self._last_trades_poll_paradise_timestamp = self._time_synchronizer.time()            
+            query_time = int(self._last_trades_poll_crypto_market_timestamp * 1e6)            
+            self._last_trades_poll_crypto_market_timestamp = self._time_synchronizer.time()            
             order_by_exchange_id_map = {}
             for order in self._order_tracker.all_fillable_orders.values():
                 order_by_exchange_id_map[order.exchange_order_id] = order
@@ -576,7 +575,7 @@ class ParadiseExchange(ExchangePyBase):
         mapping = bidict()        
         # with open('test.txt', 'w') as file:
         #         file.write(str(exchange_info))
-        for symbol_data in filter(paradise_utils.is_exchange_information_valid, exchange_info):            
+        for symbol_data in filter(crypto_market_utils.is_exchange_information_valid, exchange_info):            
             if symbol_data["symbol"] != "K_SATS-USD":
                 mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(base=symbol_data["base"],
                                                                         quote=symbol_data["quote"])
