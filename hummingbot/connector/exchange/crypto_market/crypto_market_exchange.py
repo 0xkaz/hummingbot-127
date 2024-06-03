@@ -218,8 +218,8 @@ class CryptoMarketExchange(ExchangePyBase):
         cancel_result = await self._api_delete(
             path_url=CONSTANTS.ORDER_PATH_URL,
             params=api_params,
-            is_auth_required=True)                
-        if len(cancel_result) > 0 and cancel_result[0].get("status") == CONSTANTS.ORDER_STATE["ORDER_CANCELLED"]:
+            is_auth_required=True)               
+        if len(cancel_result) == 0 and cancel_result[0].get("status") == CONSTANTS.ORDER_STATE["ORDER_CANCELLED"]:
             return True
         return False    
 

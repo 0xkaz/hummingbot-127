@@ -2,7 +2,7 @@
     "name": "hummingbot",
     "script": "./start",
     "env": {
-      "PM2_HOME": "/bot/dev/hummingbot"
+      "PM2_HOME": "~/bot/dev/hummingbot"
     },
     "pre-start": "conda activate hummingbot"
   }

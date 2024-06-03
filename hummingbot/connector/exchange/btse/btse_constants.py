@@ -38,7 +38,7 @@ MY_TRADES_PATH_URL = "/spot/api/v3.2/user/trade_history"
 ORDER_PATH_URL = "/spot/api/v3.2/order"
 OPEN_ORDER_URL = "/spot/api/v3.2/user/open_orders"
 
-CRYPTOMARKET_USER_STREAM_PATH_URL = "/ws/spot"
+BTSE_USER_STREAM_PATH_URL = "/ws/spot"
 
 WS_HEARTBEAT_TIME_INTERVAL = 30
 
@@ -108,7 +108,7 @@ RATE_LIMITS = [
     RateLimit(limit_id=SNAPSHOT_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
               linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 50),
                              LinkedLimitWeightPair(RAW_REQUESTS, 1)]),
-    RateLimit(limit_id=CRYPTOMARKET_USER_STREAM_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
+    RateLimit(limit_id=BTSE_USER_STREAM_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
               linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1),
                              LinkedLimitWeightPair(RAW_REQUESTS, 1)]),
     RateLimit(limit_id=SERVER_TIME_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
