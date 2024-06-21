@@ -52,7 +52,10 @@ QUERY_SYMBOL_ENDPOINT = {
 ORDER_BOOK_ENDPOINT = {
     LINEAR_MARKET: f"{REST_API_VERSION}/public/orderBook/L2",
     NON_LINEAR_MARKET: f"{REST_API_VERSION}/public/orderBook/L2"}
-SERVER_TIME_PATH_URL = "/spot/api/v3.2/time"
+SERVER_TIME_PATH_URL = {
+    LINEAR_MARKET: f"{REST_API_VERSION}/public/time",
+    NON_LINEAR_MARKET: f"{REST_API_VERSION}/public/time"
+}
 
 # REST API Private Endpoints
 SET_LEVERAGE_PATH_URL = {
