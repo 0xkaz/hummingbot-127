@@ -17,6 +17,14 @@ CENTRALIZED = True
 
 EXAMPLE_PAIR = "BTC-USD"
 
+def get_paradise_symbol(trading_pair: str) -> str:
+    paradise_symbol = f"{trading_pair.split('-')[0]}PFC"
+    return paradise_symbol
+
+def get_trading_pair_name(symbol: str) -> str:
+    name = symbol.replace('PFC', '-USD')
+    return name
+
 
 def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
     """

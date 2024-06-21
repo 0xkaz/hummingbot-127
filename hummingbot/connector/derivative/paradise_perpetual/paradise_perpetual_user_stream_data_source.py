@@ -99,15 +99,15 @@ class ParadisePerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         await ws.send(login_request)
         response: WSResponse = await ws.receive()
         message = response.data
-
-        if (
-            message["success"] is not True
-            or not message["request"]
-            or not message["request"]["op"]
-            or message["request"]["op"] != "authKeyExpires"
-        ):
-            self.logger().error("Error authenticating the private websocket connection")
-            raise IOError("Private websocket connection authentication failed")
+        print(f'user stream_authenticate message = response.data {str(message)}')
+        # if (
+        #     message["success"] is not True
+        #     or not message["request"]
+        #     or not message["request"]["op"]
+        #     or message["request"]["op"] != "authKeyExpires"
+        # ):
+        #     self.logger().error("Error authenticating the private websocket connection")
+        #     raise IOError("Private websocket connection authentication failed")
 
     async def _subscribe_to_channels(self, ws: WSAssistant, url: str):
         try:

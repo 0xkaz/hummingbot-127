@@ -106,7 +106,7 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     async def _subscribe_to_channels(self, ws: WSAssistant, trading_pairs: List[str]):
         try:
             symbols = [
-                await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
+                await self._connector.exchange_symbol_associated_to_pair(trading_pair=paradise_perpetual_utils.get_paradise_symbol(trading_pair))
                 for trading_pair in trading_pairs
             ]
             symbols_str = "|".join(symbols)

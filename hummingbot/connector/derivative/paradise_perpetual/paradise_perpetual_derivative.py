@@ -173,13 +173,13 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
             is_auth_required=True,
             trading_pair=tracked_order.trading_pair,
         )
-        response_code = cancel_result["ret_code"]
+        response_code = cancel_result["status"]
 
         if response_code != CONSTANTS.RET_CODE_OK:
             if response_code == CONSTANTS.RET_CODE_ORDER_NOT_EXISTS:
                 await self._order_tracker.process_order_not_found(order_id)
             formatted_ret_code = self._format_ret_code_for_print(response_code)
-            raise IOError(f"{formatted_ret_code} - {cancel_result['ret_msg']}")
+            raise IOError(f"{formatted_ret_code}")
 
         return True
 
@@ -217,9 +217,9 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
             **kwargs,
         )        
 
-        if resp["ret_code"] != CONSTANTS.RET_CODE_OK:
-            formatted_ret_code = self._format_ret_code_for_print(resp['ret_code'])
-            raise IOError(f"Error submitting order {order_id}: {formatted_ret_code} - {resp['ret_msg']}")
+        if resp["status"] != CONSTANTS.RET_CODE_OK:
+            formatted_ret_code = self._format_ret_code_for_print(resp['status'])
+            raise IOError(f"Error submitting order {order_id}: {formatted_ret_code}")
 
         return str(resp[0]["orderID"]), self.current_timestamp
 
@@ -305,7 +305,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         trade_history_tasks = []
 
         for trading_pair in self._trading_pairs:
-            exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
+            exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair=paradise_utils.get_paradise_symbol(trading_pair))
             body_params = {
                 "symbol": exchange_symbol,
                 "count": 200,
@@ -381,7 +381,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
             is_auth_required=True,
         )
 
-        # if wallet_balance["ret_code"] != CONSTANTS.RET_CODE_OK:
+        # if wallet_balance["status"] != CONSTANTS.RET_CODE_OK:
         #     formatted_ret_code = self._format_ret_code_for_print(wallet_balance['ret_code'])
         #     raise IOError(f"{formatted_ret_code} - {wallet_balance['ret_msg']}")
 
@@ -678,7 +678,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         """
         trading_rules = {}
         symbol_map = await self.trading_pair_symbol_map()
-        for instrument in instrument_info_dict["result"]:
+        for instrument in instrument_info_dict:
             try:
                 exchange_symbol = instrument["symbol"]
                 if exchange_symbol in symbol_map:
@@ -744,29 +744,22 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         success = True
 
         api_mode = CONSTANTS.POSITION_MODE_MAP[mode]
-        is_linear = paradise_utils.is_linear_perpetual(trading_pair)
 
-        if is_linear:
-            exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
-            data = {"symbol": exchange_symbol, "mode": api_mode}
+        exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair=paradise_utils.get_paradise_symbol(trading_pair))
+        data = {"symbol": exchange_symbol, "mode": api_mode}
 
-            response = await self._api_post(
-                path_url=CONSTANTS.SET_POSITION_MODE_URL,
-                data=data,
-                is_auth_required=True,
-            )
+        response = await self._api_post(
+            path_url=CONSTANTS.SET_POSITION_MODE_URL,
+            data=data,
+            is_auth_required=True,
+        )
 
-            response_code = response["ret_code"]
+        response_code = response["status"]
 
-            if response_code not in [CONSTANTS.RET_CODE_OK, CONSTANTS.RET_CODE_MODE_NOT_MODIFIED]:
-                formatted_ret_code = self._format_ret_code_for_print(response_code)
-                msg = f"{formatted_ret_code} - {response['ret_msg']}"
-                success = False
-        else:
-            #  Inverse Perpetuals don't have set_position_mode()
-            msg = "Inverse Perpetuals don't allow for a position mode change."
+        if response_code not in [CONSTANTS.RET_CODE_OK, CONSTANTS.RET_CODE_MODE_NOT_MODIFIED]:
+            formatted_ret_code = self._format_ret_code_for_print(response_code)
+            msg = f"{formatted_ret_code} - {response['message']}"
             success = False
-
         return success, msg
 
     async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
@@ -795,7 +788,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         return success, msg
 
     async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
-        exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
+        exchange_symbol = await self.exchange_symbol_associated_to_pair(paradise_utils.get_paradise_symbol(trading_pair))
 
         params = {
             "symbol": exchange_symbol
