@@ -240,7 +240,8 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             )
             message_queue.put_nowait(trade_message)
 
-    # async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+        pass
     #     event_type = raw_message["type"]
     #     if event_type == "delta":
     #         symbol = raw_message["topic"].split(".")[-1]
