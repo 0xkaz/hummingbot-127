@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional
 
-from hummingbot.connector.derivative.bybit_perpetual import bybit_perpetual_constants as CONSTANTS
+from hummingbot.connector.derivative.paradise_perpetual import paradise_perpetual_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.utils import TimeSynchronizerRESTPreProcessor
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -195,8 +195,8 @@ def _build_private_pair_specific_rate_limits(trading_pairs: List[str]) -> List[R
 
 def _build_private_pair_specific__rate_limits(trading_pair: str) -> List[RateLimit]:
     rate_limits = [
-        RateLimit(limit_id=CONSTANTS.REQUEST_WEIGHT, limit=2400, time_interval=CONSTANTS.ONE_MINUTE),
-        RateLimit(limit_id=CONSTANTS.ORDERS_1MIN, limit=1200, time_interval=CONSTANTS.ONE_MINUTE),
+        RateLimit(limit_id=CONSTANTS.REQUEST_WEIGHT, limit=2400, time_interval=CONSTANTS.ORDERS_1MIN),
+        RateLimit(limit_id=CONSTANTS.ORDERS_1MIN, limit=1200, time_interval=CONSTANTS.ORDERS_1MIN),
         RateLimit(limit_id=CONSTANTS.ORDERS_1SEC, limit=300, time_interval=10),
         RateLimit(
             limit_id=get_pair_specific_limit_id(
