@@ -50,8 +50,8 @@ async def get_current_server_time(
     api_factory = build_api_factory_without_time_synchronizer_pre_processor(throttler=throttler)
     rest_assistant = await api_factory.get_rest_assistant()
     endpoint = CONSTANTS.SERVER_TIME_PATH_URL
-    url = get_rest_url_for_endpoint(endpoint=endpoint, domain=domain)
-    limit_id = get_rest_api_limit_id_for_endpoint(endpoint)
+    url = get_rest_url_for_endpoint(endpoint=endpoint, domain=domain)    
+    limit_id = endpoint
     response = await rest_assistant.execute_request(
         url=url,
         throttler_limit_id=limit_id,
@@ -64,13 +64,11 @@ async def get_current_server_time(
 
 def endpoint_from_message(message: Dict[str, Any]) -> Optional[str]:
     endpoint = None
-    if "request" in message:
-        message = message["request"]
     if isinstance(message, dict):
-        if "op" in message.keys():
-            endpoint = message["op"]
-        elif endpoint is None and "topic" in message.keys():
+        if "topic" in message.keys():
             endpoint = message["topic"]
+        elif endpoint is None and "channel" in message.keys() and len(message["channel"])>0:
+            endpoint = message["channel"][0]
     return endpoint
 
 
@@ -195,8 +193,8 @@ def _build_private_pair_specific_rate_limits(trading_pairs: List[str]) -> List[R
 
 def _build_private_pair_specific__rate_limits(trading_pair: str) -> List[RateLimit]:
     rate_limits = [
-        RateLimit(limit_id=CONSTANTS.REQUEST_WEIGHT, limit=2400, time_interval=CONSTANTS.ORDERS_1MIN),
-        RateLimit(limit_id=CONSTANTS.ORDERS_1MIN, limit=1200, time_interval=CONSTANTS.ORDERS_1MIN),
+        RateLimit(limit_id=CONSTANTS.REQUEST_WEIGHT, limit=2400, time_interval=CONSTANTS.ONE_MINUTE),
+        RateLimit(limit_id=CONSTANTS.ORDERS_1MIN, limit=1200, time_interval=CONSTANTS.ONE_MINUTE),
         RateLimit(limit_id=CONSTANTS.ORDERS_1SEC, limit=300, time_interval=10),
         RateLimit(
             limit_id=get_pair_specific_limit_id(

@@ -71,7 +71,7 @@ class ParadisePerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                 ws = await self._get_connected_websocket_assistant(url)
                 self._ws_assistants.append(ws)
                 await self._subscribe_to_channels(ws, url)
-                await ws.ping()  # to update last_recv_timestamp
+                await ws.ping()  # to update last_recv_timestamp                     
                 await self._process_websocket_messages(websocket_assistant=ws, queue=output)
             except asyncio.CancelledError:
                 raise
@@ -113,17 +113,17 @@ class ParadisePerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         try:
             payload = {
                 "op": "subscribe",
-                "args": [f"{CONSTANTS.WS_SUBSCRIPTION_POSITIONS_ENDPOINT_NAME}"],
+                "args": [CONSTANTS.WS_SUBSCRIPTION_POSITIONS_ENDPOINT_NAME],
             }
             subscribe_positions_request = WSJSONRequest(payload)
             payload = {
                 "op": "subscribe",
-                "args": [f"{CONSTANTS.WS_SUBSCRIPTION_ORDERS_ENDPOINT_NAME}"],
+                "args": [CONSTANTS.WS_SUBSCRIPTION_ORDERS_ENDPOINT_NAME],
             }
             subscribe_orders_request = WSJSONRequest(payload)
             payload = {
                 "op": "subscribe",
-                "args": [f"{CONSTANTS.WS_SUBSCRIPTION_EXECUTIONS_ENDPOINT_NAME}"],
+                "args": [CONSTANTS.WS_SUBSCRIPTION_EXECUTIONS_ENDPOINT_NAME],
             }
             subscribe_executions_request = WSJSONRequest(payload)
             # payload = {

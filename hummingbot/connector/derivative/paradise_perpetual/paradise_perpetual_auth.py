@@ -66,7 +66,8 @@ class ParadisePerpetualAuth(AuthBase):
             "request-api": self._api_key,
             "request-nonce": nonce,
             "request-sign": signature
-        }
+        }        
+        
         return headers
 
     @staticmethod

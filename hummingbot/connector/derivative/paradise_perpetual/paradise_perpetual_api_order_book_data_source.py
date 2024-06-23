@@ -104,11 +104,12 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return ws
 #NTI
     async def _subscribe_to_channels(self, ws: WSAssistant, trading_pairs: List[str]):
-        try:
+        try:            
             symbols = [
-                await self._connector.exchange_symbol_associated_to_pair(trading_pair=paradise_perpetual_utils.get_paradise_symbol(trading_pair))
+                paradise_perpetual_utils.get_paradise_symbol(trading_pair)
                 for trading_pair in trading_pairs
             ]
+
             symbols_str = "|".join(symbols)
 
             payload = {
@@ -184,9 +185,9 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 await websocket_assistant.send("ping")
 
     def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
-        channel = ""
-        if "success" not in event_message:
-            event_channel = event_message["topic"]
+        channel = ""        
+        if "data" not in event_message:
+            event_channel = event_message["channel"][0] if len(event_message["channel"])>0 else ''
             event_channel = ".".join(event_channel.split(":")[:-1])
             if event_channel == CONSTANTS.WS_TRADES_TOPIC:
                 channel = self._trade_messages_queue_key
@@ -219,26 +220,27 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             message_queue.put_nowait(diff_message)
 
     async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
-        trade_updates = raw_message["data"]
+        if "data" in raw_message:
+            trade_updates = raw_message["data"]
 
-        for trade_data in trade_updates:
-            symbol = trade_data["symbol"]
-            trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol)
-            ts_ms = int(trade_data["timestamp"])
-            trade_type = float(TradeType.SELL.value) if trade_data["side"] == "SELL" else float(TradeType.BUY.value)
-            message_content = {
-                "trade_id": trade_data["tradeId"],
-                "trading_pair": trading_pair,
-                "trade_type": trade_type,
-                "amount": trade_data["size"],
-                "price": trade_data["price"],
-            }
-            trade_message = OrderBookMessage(
-                message_type=OrderBookMessageType.TRADE,
-                content=message_content,
-                timestamp=ts_ms * 1e-3,
-            )
-            message_queue.put_nowait(trade_message)
+            for trade_data in trade_updates:
+                symbol = trade_data["symbol"]
+                trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol)
+                ts_ms = int(trade_data["timestamp"])
+                trade_type = float(TradeType.SELL.value) if trade_data["side"] == "SELL" else float(TradeType.BUY.value)
+                message_content = {
+                    "trade_id": trade_data["tradeId"],
+                    "trading_pair": trading_pair,
+                    "trade_type": trade_type,
+                    "amount": trade_data["size"],
+                    "price": trade_data["price"],
+                }
+                trade_message = OrderBookMessage(
+                    message_type=OrderBookMessageType.TRADE,
+                    content=message_content,
+                    timestamp=ts_ms * 1e-3,
+                )
+                message_queue.put_nowait(trade_message)
 
     async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
         pass
@@ -266,7 +268,7 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     async def _request_complete_funding_info(self, trading_pair: str):
         tasks = []
         params = {
-            "symbol": await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair),
+            "symbol": paradise_perpetual_utils.get_paradise_symbol(trading_pair)
         }
 
         rest_assistant = await self._api_factory.get_rest_assistant()
@@ -315,7 +317,7 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
         params = {
-            "symbol": await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair),
+            "symbol": paradise_perpetual_utils.get_paradise_symbol(trading_pair),
         }
 
         rest_assistant = await self._api_factory.get_rest_assistant()
