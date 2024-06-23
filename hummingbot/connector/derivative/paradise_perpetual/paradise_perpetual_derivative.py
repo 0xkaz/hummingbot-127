@@ -411,7 +411,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
             position_tasks.append(
                 asyncio.create_task(self._api_get(
                     path_url=CONSTANTS.GET_POSITIONS_PATH_URL,
-                    # params=body_params,
+                    params=body_params,
                     is_auth_required=True,
                     trading_pair=trading_pair,
                 ))
