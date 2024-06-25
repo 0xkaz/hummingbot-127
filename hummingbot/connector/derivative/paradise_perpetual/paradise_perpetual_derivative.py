@@ -533,9 +533,6 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
                     elif endpoint == CONSTANTS.WS_SUBSCRIPTION_EXECUTIONS_ENDPOINT_NAME:
                         for trade_msg in payload:
                             self._process_trade_event_message(trade_msg)
-                    elif endpoint == CONSTANTS.WS_SUBSCRIPTION_WALLET_ENDPOINT_NAME:
-                        for wallet_msg in payload:
-                            self._process_wallet_event_message(wallet_msg)
                     elif endpoint is None:
                         self.logger().error(f"Could not extract endpoint from {event_message}.")
                         raise ValueError
@@ -644,18 +641,6 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
                 exchange_order_id=order_msg["orderID"],
             )
             self._order_tracker.process_order_update(new_order_update)
-
-    def _process_wallet_event_message(self, wallet_msg: Dict[str, Any]):
-        """
-        Updates account balances.
-        :param wallet_msg: The account balance update message payload
-        """
-        if "coin" in wallet_msg:  # non-linear
-            symbol = wallet_msg["coin"]
-        else:  # linear
-            symbol = "USDT"
-        self._account_balances[symbol] = Decimal(str(wallet_msg["wallet_balance"]))
-        self._account_available_balances[symbol] = Decimal(str(wallet_msg["available_balance"]))
 
     async def _format_trading_rules(self, instrument_info_dict: Dict[str, Any]) -> List[TradingRule]:
         """
