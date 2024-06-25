@@ -126,16 +126,10 @@ class ParadisePerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                 "args": [CONSTANTS.WS_SUBSCRIPTION_EXECUTIONS_ENDPOINT_NAME],
             }
             subscribe_executions_request = WSJSONRequest(payload)
-            # payload = {
-            #     "op": "subscribe",
-            #     "args": [f"{CONSTANTS.WS_SUBSCRIPTION_WALLET_ENDPOINT_NAME}"],
-            # }
-            # subscribe_wallet_request = WSJSONRequest(payload)
 
             await ws.send(subscribe_positions_request)
             await ws.send(subscribe_orders_request)
             await ws.send(subscribe_executions_request)
-            # await ws.send(subscribe_wallet_request)
 
             self.logger().info(
                 f"Subscribed to private account and orders channels {url}..."
