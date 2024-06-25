@@ -1,5 +1,4 @@
 from hummingbot.core.data_type.common import OrderType, PositionMode
-from hummingbot.core.data_type.in_flight_order import OrderState
 
 EXCHANGE_NAME = "paradise_perpetual"
 
@@ -7,16 +6,16 @@ DEFAULT_DOMAIN = "paradise_perpetual_main"
 
 DEFAULT_TIME_IN_FORCE = "GTC"
 
-REST_URLS = {"paradise_perpetual_main": "https://api.paradise.exchange",
-             "paradise_perpetual_testnet": "https://api.testparadise.exchange"}
+REST_URLS = {"paradise_perpetual_main": "https://api.paradise.exchange/",
+             "paradise_perpetual_testnet": "https://api.testparadise.exchange/"}
 
 WSS_URLS = {"paradise_perpetual_main": "wss://ws.paradise.exchange/ws/futures",
-                    "paradise_perpetual_testnet": "wss://ws.testparadise.exchange/ws/futures"}
+            "paradise_perpetual_testnet": "wss://ws.testparadise.exchange/ws/futures"}
 
 WSS_OB_URLS = {"paradise_perpetual_main": "wss://ws.paradise.exchange/ws/oss/futures",
                "paradise_perpetual_testnet": "wss://ws.testparadise.exchange/ws/oss/futures"}
 
-REST_API_VERSION = "/futures/api/v2.1"
+REST_API_VERSION = "futures/api/v2.1"
 
 HBOT_BROKER_ID = "Hummingbot"
 

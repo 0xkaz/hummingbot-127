@@ -194,17 +194,16 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
-    ) -> Tuple[str, float]:        
-        position_idx = self._get_position_idx(trade_type, position_action)
+    ) -> Tuple[str, float]:
         data = {
             "side": "BUY" if trade_type == TradeType.BUY else "SELL",
             # "symbol": await self.exchange_symbol_associated_to_pair(trading_pair),
             "symbol": paradise_utils.get_paradise_symbol(trading_pair),
             "size": float(amount),
-            "time_in_force": CONSTANTS.DEFAULT_TIME_IN_FORCE,            
+            "time_in_force": CONSTANTS.DEFAULT_TIME_IN_FORCE,
             "clOrderID": order_id,
             "reduceOnly": position_action == PositionAction.CLOSE,
-            "positionMode": position_idx,
+            "positionMode": "ONE_WAY" if self.position_mode == PositionMode.ONEWAY else "HEDGE",
             "type": CONSTANTS.ORDER_TYPE_MAP[order_type],
         }
         if order_type.is_limit_type():
@@ -217,33 +216,13 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
             trading_pair=trading_pair,
             headers={"referer": CONSTANTS.HBOT_BROKER_ID},
             **kwargs,
-        )        
+        )
 
         if resp["status"] != CONSTANTS.RET_CODE_OK:
             formatted_ret_code = self._format_ret_code_for_print(resp['status'])
             raise IOError(f"Error submitting order {order_id}: {formatted_ret_code}")
 
         return str(resp[0]["orderID"]), self.current_timestamp
-
-    def _get_position_idx(self, trade_type: TradeType, position_action: PositionAction) -> int:
-        if position_action == PositionAction.NIL:
-            raise NotImplementedError
-        if self.position_mode == PositionMode.ONEWAY:
-            position_idx = CONSTANTS.POSITION_IDX_ONEWAY
-        elif trade_type == TradeType.BUY:
-            if position_action == PositionAction.CLOSE:
-                position_idx = CONSTANTS.POSITION_IDX_HEDGE_SELL
-            else:  # position_action == PositionAction.Open
-                position_idx = CONSTANTS.POSITION_IDX_HEDGE_BUY
-        elif trade_type == TradeType.SELL:
-            if position_action == PositionAction.CLOSE:
-                position_idx = CONSTANTS.POSITION_IDX_HEDGE_BUY
-            else:  # position_action == PositionAction.Open
-                position_idx = CONSTANTS.POSITION_IDX_HEDGE_SELL
-        else:  # trade_type == TradeType.RANGE
-            raise NotImplementedError
-
-        return position_idx
 
     def _get_fee(self,
                  base_currency: str,
@@ -325,11 +304,11 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
                 ))
             )
 
-        raw_responses: List[Dict[str, Any]] = await safe_gather(*trade_history_tasks, return_exceptions=True)        
+        raw_responses: List[Dict[str, Any]] = await safe_gather(*trade_history_tasks, return_exceptions=True)
 
         # Initial parsing of responses. Joining all the responses
         parsed_history_resps: List[Dict[str, Any]] = []
-        for trading_pair, resp in zip(self._trading_pairs, raw_responses):            
+        for trading_pair, resp in zip(self._trading_pairs, raw_responses):
             if len(resp) > 0:
                 if not isinstance(resp, Exception) and len(resp) > 0:
                     self._last_trade_history_timestamp = float(resp["timestamp"])
@@ -344,7 +323,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
                     )
 
         # Trade updates must be handled before any order status updates.
-        if len(parsed_history_resps)>0:
+        if len(parsed_history_resps) > 0:
             for trade in parsed_history_resps:
                 self._process_trade_event_message(trade)
 
@@ -358,7 +337,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         tasks = []
         for active_order in active_orders:
             tasks.append(asyncio.create_task(self._request_order_status_data(tracked_order=active_order)))
-        #log_required
+        # log_required
         raw_responses: List[Dict[str, Any]] = await safe_gather(*tasks, return_exceptions=True)
 
         # Initial parsing of responses. Removes Exceptions.
@@ -372,7 +351,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
                     app_warning_msg=f"Failed to fetch status update for the order {active_order.client_order_id}."
                 )
                 await self._order_tracker.process_order_not_found(active_order.client_order_id)
-        if len(parsed_status_responses)>0:
+        if len(parsed_status_responses) > 0:
             for order_status in parsed_status_responses:
                 self._process_order_event_message(order_status)
 
@@ -385,7 +364,6 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
             params={"wallet": "CROSS@"},
             is_auth_required=True,
         )
-
         # if wallet_balance["status"] != CONSTANTS.RET_CODE_OK:
         #     formatted_ret_code = self._format_ret_code_for_print(wallet_balance['ret_code'])
         #     raise IOError(f"{formatted_ret_code} - {wallet_balance['ret_msg']}")
@@ -394,9 +372,10 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         self._account_balances.clear()
 
         if wallet_balance[0] is not None:
-            for balance_json in wallet_balance[0]["assets"]:
-                self._account_balances[balance_json["currency"]] = Decimal(str(balance_json["balance"]))
-                self._account_available_balances[balance_json["currency"]] = Decimal(str(wallet_balance[0]["availableBalance"]))
+            for asset in wallet_balance[0].get("assets"):
+                asset_name = asset.get("currency")
+                self._account_balances[asset_name] = Decimal(asset["balance"])
+                self._account_available_balances[asset_name] = Decimal(wallet_balance[0]["availableBalance"])
 
     async def _update_positions(self):
         """
@@ -418,7 +397,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
             )
 
         raw_responses: List[Dict[str, Any]] = await safe_gather(*position_tasks, return_exceptions=True)
-        #log_required        
+        # log_required
         # Initial parsing of responses. Joining all the responses
         parsed_resps: List[Dict[str, Any]] = []
         for resp, trading_pair in zip(raw_responses, self._trading_pairs):
@@ -459,7 +438,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         if order.exchange_order_id is not None:
             try:
                 all_fills_response = await self._request_order_fills(order=order)
-                #log_required
+                # log_required
                 fills_data = all_fills_response
 
                 if fills_data is not None:
@@ -543,22 +522,23 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
             try:
                 pass
                 endpoint = web_utils.endpoint_from_message(event_message)
-                payload = web_utils.payload_from_message(event_message)                
-                # if endpoint == CONSTANTS.WS_SUBSCRIPTION_POSITIONS_ENDPOINT_NAME:
-                #     for position_msg in payload:
-                #         await self._process_account_position_event(position_msg)
-                # elif endpoint == CONSTANTS.WS_SUBSCRIPTION_ORDERS_ENDPOINT_NAME:
-                #     for order_msg in payload:
-                #         self._process_order_event_message(order_msg)
-                # elif endpoint == CONSTANTS.WS_SUBSCRIPTION_EXECUTIONS_ENDPOINT_NAME:
-                #     for trade_msg in payload:
-                #         self._process_trade_event_message(trade_msg)
-                # elif endpoint == CONSTANTS.WS_SUBSCRIPTION_WALLET_ENDPOINT_NAME:
-                #     for wallet_msg in payload:
-                #         self._process_wallet_event_message(wallet_msg)
-                # elif endpoint is None:
-                #     self.logger().error(f"Could not extract endpoint from {event_message}.")
-                    # raise ValueError
+                payload = web_utils.payload_from_message(event_message)
+                if len(payload) > 0:
+                    if endpoint == CONSTANTS.WS_SUBSCRIPTION_POSITIONS_ENDPOINT_NAME:
+                        for position_msg in payload:
+                            await self._process_account_position_event(position_msg)
+                    elif endpoint == CONSTANTS.WS_SUBSCRIPTION_ORDERS_ENDPOINT_NAME:
+                        for order_msg in payload:
+                            self._process_order_event_message(order_msg)
+                    elif endpoint == CONSTANTS.WS_SUBSCRIPTION_EXECUTIONS_ENDPOINT_NAME:
+                        for trade_msg in payload:
+                            self._process_trade_event_message(trade_msg)
+                    elif endpoint == CONSTANTS.WS_SUBSCRIPTION_WALLET_ENDPOINT_NAME:
+                        for wallet_msg in payload:
+                            self._process_wallet_event_message(wallet_msg)
+                    elif endpoint is None:
+                        self.logger().error(f"Could not extract endpoint from {event_message}.")
+                        raise ValueError
             except asyncio.CancelledError:
                 raise
             except Exception:
@@ -569,7 +549,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         """
         Updates position
         :param position_msg: The position event message payload
-        """        
+        """
         ex_trading_pair = str(position_msg["marketName"]).split("-")[0]
         trading_pair = await self.trading_pair_associated_to_exchange_symbol(symbol=ex_trading_pair)
         position_side = PositionSide.SHORT if position_msg["orderModeName"] == "MODE_SELL" else PositionSide.LONG
@@ -714,6 +694,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
                 self._resolve_trading_pair_symbols_duplicate(mapping, exchange_symbol, base, quote)
             else:
                 mapping[exchange_symbol] = trading_pair
+
         self._set_trading_pair_symbol_map(mapping)
 
     def _resolve_trading_pair_symbols_duplicate(self, mapping: bidict, new_exchange_symbol: str, base: str, quote: str):
@@ -748,6 +729,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         return price
 
     async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+        print('start postion')
         msg = ""
         success = True
 
@@ -764,6 +746,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         )
 
         response_code = response["status"]
+        print(f'code {response_code}')
 
         if response_code not in [CONSTANTS.RET_CODE_OK, CONSTANTS.RET_CODE_MODE_NOT_MODIFIED]:
             formatted_ret_code = self._format_ret_code_for_print(response_code)
@@ -797,8 +780,8 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
 
         return success, msg
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:        
-        # exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)        
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
+        # exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
         exchange_symbol = paradise_utils.get_paradise_symbol(trading_pair)
         params = {
             "symbol": exchange_symbol,
@@ -817,7 +800,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         else:
             funding_rate: Decimal = Decimal(str(data["fundingRate"]))
             position_size: Decimal = Decimal(str(data["contractSize"]))
-            payment: Decimal = funding_rate * position_size            
+            payment: Decimal = funding_rate * position_size
             timestamp: int = int(pd.Timestamp(data["fundingTime"], tz="UTC").timestamp())
 
         return timestamp, funding_rate, payment

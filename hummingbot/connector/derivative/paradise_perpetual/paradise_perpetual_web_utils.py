@@ -50,7 +50,7 @@ async def get_current_server_time(
     api_factory = build_api_factory_without_time_synchronizer_pre_processor(throttler=throttler)
     rest_assistant = await api_factory.get_rest_assistant()
     endpoint = CONSTANTS.SERVER_TIME_PATH_URL
-    url = get_rest_url_for_endpoint(endpoint=endpoint, domain=domain)    
+    url = get_rest_url_for_endpoint(endpoint=endpoint, domain=domain)
     limit_id = endpoint
     response = await rest_assistant.execute_request(
         url=url,
@@ -67,13 +67,13 @@ def endpoint_from_message(message: Dict[str, Any]) -> Optional[str]:
     if isinstance(message, dict):
         if "topic" in message.keys():
             endpoint = message["topic"]
-        elif endpoint is None and "channel" in message.keys() and len(message["channel"])>0:
+        elif endpoint is None and "channel" in message.keys() and len(message["channel"]) > 0:
             endpoint = message["channel"][0]
     return endpoint
 
 
 def payload_from_message(message: Dict[str, Any]) -> List[Dict[str, Any]]:
-    payload = message
+    payload = []
     if "data" in message:
         payload = message["data"]
     return payload
@@ -86,7 +86,7 @@ def build_api_factory_without_time_synchronizer_pre_processor(throttler: AsyncTh
 
 def get_rest_url_for_endpoint(
     endpoint: Dict[str, str], trading_pair: Optional[str] = None, domain: str = CONSTANTS.DEFAULT_DOMAIN
-):    
+):
     variant = domain if domain else CONSTANTS.DEFAULT_DOMAIN
     return CONSTANTS.REST_URLS.get(variant) + endpoint
 
@@ -96,7 +96,7 @@ def get_pair_specific_limit_id(base_limit_id: str, trading_pair: str) -> str:
     return limit_id
 
 
-def get_rest_api_limit_id_for_endpoint(endpoint: Dict[str, str], trading_pair: Optional[str] = None) -> str:    
+def get_rest_api_limit_id_for_endpoint(endpoint: Dict[str, str], trading_pair: Optional[str] = None) -> str:
     limit_id = endpoint
     if trading_pair is not None:
         limit_id = get_pair_specific_limit_id(limit_id, trading_pair)
@@ -106,6 +106,7 @@ def get_rest_api_limit_id_for_endpoint(endpoint: Dict[str, str], trading_pair: O
 def _wss_url(endpoint: Dict[str, str], connector_variant_label: Optional[str]) -> str:
     variant = connector_variant_label if connector_variant_label else CONSTANTS.DEFAULT_DOMAIN
     return endpoint.get(variant)
+
 
 def build_rate_limits(trading_pairs: Optional[List[str]] = None) -> List[RateLimit]:
     trading_pairs = trading_pairs or []
@@ -120,13 +121,13 @@ def build_rate_limits(trading_pairs: Optional[List[str]] = None) -> List[RateLim
 
 def _build_private_general_rate_limits() -> List[RateLimit]:
     rate_limits = [
-        RateLimit(  
+        RateLimit(
             limit_id=CONSTANTS.GET_WALLET_BALANCE_PATH_URL,
             limit=120,
             time_interval=60,
             linked_limits=[LinkedLimitWeightPair(CONSTANTS.GET_LIMIT_ID)],
         ),
-        RateLimit(  
+        RateLimit(
             limit_id=CONSTANTS.SET_POSITION_MODE_URL,
             limit=120,
             time_interval=60,
@@ -146,25 +147,25 @@ def _build_global_rate_limits() -> List[RateLimit]:
 
 def _build_public_rate_limits():
     public_rate_limits = [
-        RateLimit(  
+        RateLimit(
             limit_id=CONSTANTS.LATEST_SYMBOL_INFORMATION_ENDPOINT,
             limit=CONSTANTS.GET_RATE,
             time_interval=1,
             linked_limits=[LinkedLimitWeightPair(CONSTANTS.GET_LIMIT_ID)],
         ),
-        RateLimit(  
+        RateLimit(
             limit_id=CONSTANTS.QUERY_SYMBOL_ENDPOINT,
             limit=CONSTANTS.GET_RATE,
             time_interval=1,
             linked_limits=[LinkedLimitWeightPair(CONSTANTS.GET_LIMIT_ID)],
         ),
-        RateLimit(  
+        RateLimit(
             limit_id=CONSTANTS.ORDER_BOOK_ENDPOINT,
             limit=CONSTANTS.GET_RATE,
             time_interval=1,
             linked_limits=[LinkedLimitWeightPair(CONSTANTS.GET_LIMIT_ID)],
         ),
-        RateLimit(  
+        RateLimit(
             limit_id=CONSTANTS.SERVER_TIME_PATH_URL,
             limit=CONSTANTS.GET_RATE,
             time_interval=1,
@@ -186,7 +187,7 @@ def _build_private_rate_limits(trading_pairs: List[str]) -> List[RateLimit]:
 def _build_private_pair_specific_rate_limits(trading_pairs: List[str]) -> List[RateLimit]:
     rate_limits = []
 
-    for trading_pair in trading_pairs:        
+    for trading_pair in trading_pairs:
         rate_limits.extend(_build_private_pair_specific__rate_limits(trading_pair))
     return rate_limits
 
