@@ -1,10 +1,7 @@
 import asyncio
 from typing import List, Optional
 
-from hummingbot.connector.derivative.paradise_perpetual import (
-    paradise_perpetual_constants as CONSTANTS,
-    paradise_perpetual_web_utils as web_utils,
-)
+from hummingbot.connector.derivative.paradise_perpetual import paradise_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.paradise_perpetual.paradise_perpetual_auth import ParadisePerpetualAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
@@ -71,7 +68,7 @@ class ParadisePerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                 ws = await self._get_connected_websocket_assistant(url)
                 self._ws_assistants.append(ws)
                 await self._subscribe_to_channels(ws, url)
-                await ws.ping()  # to update last_recv_timestamp                     
+                await ws.ping()  # to update last_recv_timestamp
                 await self._process_websocket_messages(websocket_assistant=ws, queue=output)
             except asyncio.CancelledError:
                 raise
@@ -94,20 +91,14 @@ class ParadisePerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         """
         Authenticates user to websocket
         """
-        auth_payload: List[str] = self._auth.get_ws_auth_payload()        
+        auth_payload: List[str] = self._auth.get_ws_auth_payload()
         login_request: WSJSONRequest = WSJSONRequest(payload=auth_payload)
         await ws.send(login_request)
         response: WSResponse = await ws.receive()
         message = response.data
-        print(f'user stream_authenticate message = response.data {str(message)}')
-        # if (
-        #     message["success"] is not True
-        #     or not message["request"]
-        #     or not message["request"]["op"]
-        #     or message["request"]["op"] != "authKeyExpires"
-        # ):
-        #     self.logger().error("Error authenticating the private websocket connection")
-        #     raise IOError("Private websocket connection authentication failed")
+        if message["success"] is not True:
+            self.logger().error("Error authenticating the private websocket connection")
+            raise IOError("Private websocket connection authentication failed")
 
     async def _subscribe_to_channels(self, ws: WSAssistant, url: str):
         try:

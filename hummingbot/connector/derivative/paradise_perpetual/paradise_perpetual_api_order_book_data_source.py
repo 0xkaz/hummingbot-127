@@ -10,7 +10,7 @@ from hummingbot.connector.derivative.paradise_perpetual import (
     paradise_perpetual_web_utils as web_utils,
 )
 from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
+from hummingbot.core.data_type.funding_info import FundingInfo
 from hummingbot.core.data_type.order_book import OrderBookMessage
 from hummingbot.core.data_type.order_book_message import OrderBookMessageType
 from hummingbot.core.data_type.perpetual_api_order_book_data_source import PerpetualAPIOrderBookDataSource
@@ -20,7 +20,9 @@ from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFa
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 if TYPE_CHECKING:
-    from hummingbot.connector.derivative.paradise_perpetual.paradise_perpetual_derivative import ParadisePerpetualDerivative
+    from hummingbot.connector.derivative.paradise_perpetual.paradise_perpetual_derivative import (
+        ParadisePerpetualDerivative,
+    )
 
 
 class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
@@ -49,11 +51,10 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             trading_pair=trading_pair,
             index_price=Decimal(str(general_info["indexPrice"])),
             mark_price=Decimal(str(general_info["markPrice"])),
-            next_funding_utc_timestamp=int(pd.Timestamp(general_info["fundingTime"]).timestamp()),
+            next_funding_utc_timestamp=int(pd.Timestamp(predicted_funding["fundingTime"]).timestamp()),
             rate=Decimal(str(predicted_funding["fundingRate"])),
         )
         return funding_info
-
 
     async def listen_for_subscriptions(self):
         """
@@ -61,7 +62,7 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         """
         tasks_future = None
         try:
-            tasks = []            
+            tasks = []
             tasks.append(self._listen_for_subscriptions_on_url(
                 url=CONSTANTS.WSS_URLS[self._domain],
                 trading_pairs=self._trading_pairs))
@@ -102,9 +103,9 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             ws_url=ws_url, message_timeout=CONSTANTS.SECONDS_TO_WAIT_TO_RECEIVE_MESSAGE
         )
         return ws
-#NTI
+
     async def _subscribe_to_channels(self, ws: WSAssistant, trading_pairs: List[str]):
-        try:            
+        try:
             symbols = [
                 paradise_perpetual_utils.get_paradise_symbol(trading_pair)
                 for trading_pair in trading_pairs
@@ -148,17 +149,16 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     #             try:
     #                 ws: WSAssistant = await self._api_factory.get_ws_assistant()
     #                 await ws.connect(ws_url=CONSTANTS.WSS_OB_URLS[self._domain], ping_timeout=CONSTANTS.SECONDS_TO_WAIT_TO_RECEIVE_MESSAGE)
-                    
-    #                 diff_params = []                
+    #                 diff_params = []
     #                 for trading_pair in self._trading_pairs:
     #                     symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
     #                     paradise_symbol = paradise_perpetual_utils.get_paradise_symbol(symbol)
-    #                     diff_params.append(f"update:{paradise_symbol}_0")  
+    #                     diff_params.append(f"update:{paradise_symbol}_0")
     #                 payload = {
     #                     "op": "subscribe",
     #                     "args": diff_params,
     #                 }
-    #                 subscribe_diff_request: WSJSONRequest = WSJSONRequest(payload=payload)                
+    #                 subscribe_diff_request: WSJSONRequest = WSJSONRequest(payload=payload)
     #                 await ws.send(subscribe_diff_request)
     #                 async for ws_response in ws.iter_messages():
     #                     msg = ws_response.data
@@ -185,9 +185,9 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 await websocket_assistant.send("ping")
 
     def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
-        channel = ""        
+        channel = ""
         if "data" not in event_message:
-            event_channel = event_message["channel"][0] if len(event_message["channel"])>0 else ''
+            event_channel = event_message["channel"][0] if len(event_message["channel"]) > 0 else ''
             event_channel = ".".join(event_channel.split(":")[:-1])
             if event_channel == CONSTANTS.WS_TRADES_TOPIC:
                 channel = self._trade_messages_queue_key
@@ -205,7 +205,7 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol)
             timestamp_us = int(raw_message["data"]["timestamp"])
             update_id = self._nonce_provider.get_tracking_nonce(timestamp=timestamp_us * 1e-6)
-            diffs_data = raw_message["data"]            
+            diffs_data = raw_message["data"]
             order_book_message_content = {
                 "trading_pair": trading_pair,
                 "update_id": update_id,
@@ -281,6 +281,10 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             params=params,
             method=RESTMethod.GET,
         ))
+        params = {
+            "symbol": paradise_perpetual_utils.get_paradise_symbol(trading_pair),
+            "listFullAttributes": "true"
+        }
         endpoint_predicted = CONSTANTS.GET_PREDICTED_FUNDING_RATE_PATH_URL
         url_predicted = web_utils.get_rest_url_for_endpoint(endpoint=endpoint_predicted, trading_pair=trading_pair, domain=self._domain)
         limit_id_predicted = web_utils.get_rest_api_limit_id_for_endpoint(endpoint_predicted, trading_pair)
@@ -296,7 +300,7 @@ class ParadisePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return responses
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot_data = await self._request_order_book_snapshot(trading_pair)        
+        snapshot_data = await self._request_order_book_snapshot(trading_pair)
         timestamp = float(snapshot_data["timestamp"])
         update_id = self._nonce_provider.get_tracking_nonce(timestamp=timestamp)
 
