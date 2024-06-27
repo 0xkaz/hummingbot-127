@@ -163,20 +163,25 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
 
     async def _place_cancel(self, order_id: str, tracked_order: InFlightOrder):
         # data = {"symbol": await self.exchange_symbol_associated_to_pair(tracked_order.trading_pair)}
-        data = {"symbol": paradise_utils.get_paradise_symbol(tracked_order.trading_pair)}
+        params = {"symbol": paradise_utils.get_paradise_symbol(tracked_order.trading_pair)}
         if tracked_order.exchange_order_id:
-            data["orderID"] = tracked_order.exchange_order_id
+            params["orderID"] = tracked_order.exchange_order_id
         else:
-            data["clOrderID"] = tracked_order.client_order_id
-        cancel_result = await self._api_post(
+            params["clOrderID"] = tracked_order.client_order_id
+
+        with open('debug.txt', 'w') as outputF:
+            outputF.write(str(params))
+
+        cancel_result = await self._api_delete(
             path_url=CONSTANTS.CANCEL_ACTIVE_ORDER_PATH_URL,
-            data=data,
+            params=params,
             is_auth_required=True,
             trading_pair=tracked_order.trading_pair,
         )
+
         response_code = cancel_result["status"]
 
-        if response_code != CONSTANTS.RET_CODE_OK:
+        if response_code != CONSTANTS.RET_CODE_ORDER_CANCELLED:
             if response_code == CONSTANTS.RET_CODE_ORDER_NOT_EXISTS:
                 await self._order_tracker.process_order_not_found(order_id)
             formatted_ret_code = self._format_ret_code_for_print(response_code)
@@ -218,8 +223,8 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
             **kwargs,
         )
 
-        if resp["status"] != CONSTANTS.RET_CODE_OK:
-            formatted_ret_code = self._format_ret_code_for_print(resp['status'])
+        if resp[0]["status"] >= CONSTANTS.RET_ORDER_CODE_OK_LIMIT:
+            formatted_ret_code = self._format_ret_code_for_print(resp[0]['status'])
             raise IOError(f"Error submitting order {order_id}: {formatted_ret_code}")
 
         return str(resp[0]["orderID"]), self.current_timestamp
@@ -308,19 +313,18 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
 
         # Initial parsing of responses. Joining all the responses
         parsed_history_resps: List[Dict[str, Any]] = []
-        for trading_pair, resp in zip(self._trading_pairs, raw_responses):
-            if len(resp) > 0:
-                if not isinstance(resp, Exception) and len(resp) > 0:
-                    self._last_trade_history_timestamp = float(resp["timestamp"])
-                    # log_required
-                    trade_entries = resp
-                    if trade_entries:
-                        parsed_history_resps.extend(trade_entries)
-                else:
-                    self.logger().network(
-                        f"Error fetching status update for {trading_pair}: {resp}.",
-                        app_warning_msg=f"Failed to fetch status update for {trading_pair}."
-                    )
+        for trading_pair, resp in zip(self._trading_pairs, raw_responses[0]):
+            if not isinstance(resp, Exception):
+                self._last_trade_history_timestamp = float(resp["timestamp"])
+
+                trade_entries = resp
+                if trade_entries:
+                    parsed_history_resps.extend(trade_entries)
+            else:
+                self.logger().network(
+                    f"Error fetching status update for {trading_pair}: {resp}.",
+                    app_warning_msg=f"Failed to fetch status update for {trading_pair}."
+                )
 
         # Trade updates must be handled before any order status updates.
         if len(parsed_history_resps) > 0:
@@ -339,12 +343,12 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
             tasks.append(asyncio.create_task(self._request_order_status_data(tracked_order=active_order)))
         # log_required
         raw_responses: List[Dict[str, Any]] = await safe_gather(*tasks, return_exceptions=True)
-
         # Initial parsing of responses. Removes Exceptions.
         parsed_status_responses: List[Dict[str, Any]] = []
         for resp, active_order in zip(raw_responses, active_orders):
+            print(f'update trading history erro fetch order status {str(resp)}')
             if not isinstance(resp, Exception):
-                parsed_status_responses.append(resp[0])
+                parsed_status_responses.append(resp)
             else:
                 self.logger().network(
                     f"Error fetching status update for the order {active_order.client_order_id}: {resp}.",
@@ -578,7 +582,7 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         event if the total executed amount equals to the specified order amount.
         :param trade_msg: The trade event message payload
         """
-
+        print(f'_process_trade_event_message {str(trade_msg)}')
         client_order_id = str(trade_msg["clOrderID"])
         fillable_order = self._order_tracker.all_fillable_orders.get(client_order_id)
 
@@ -628,7 +632,8 @@ class ParadisePerpetualDerivative(PerpetualDerivativePyBase):
         Updates in-flight order and triggers cancellation or failure event if needed.
         :param order_msg: The order event message payload
         """
-        order_status = CONSTANTS.ORDER_STATE[order_msg["status"]]
+        print(f'_process_order_event_message {order_msg["status"]}')
+        order_status = order_msg["status"]
         client_order_id = str(order_msg["clOrderID"])
         updatable_order = self._order_tracker.all_updatable_orders.get(client_order_id)
 
