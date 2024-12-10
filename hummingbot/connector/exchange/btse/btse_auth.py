@@ -35,19 +35,7 @@ class BtseAuth(AuthBase):
         """
         return request  # pass-through
     
-    def generate_ws_authentication_message(self):
-        """
-        Generates the authentication message to start receiving messages from
-        the 3 private ws channels
-        """
-        expires = int((self.time_provider.time() + 10) * 1e3)
-        message = f"/ws/spot{expires}"
-        signature = hmac.new(self.secret_key.encode("utf8"), message.encode("utf8"), hashlib.sha384).hexdigest()
-        auth_message = {
-            "op": "authKeyExpires",
-            "args": [self.api_key, expires, signature]
-        }
-        return auth_message
+    
 
     def header_for_authentication(self, request: RESTRequest) -> Dict[str, str]:
         lang = "latin-1"
