@@ -52,6 +52,11 @@ TIME_IN_FORCE_IOC = "IOC"  # Immediate or cancel
 TIME_IN_FORCE_FOK = "FOK"  # Fill or kill
 
 
+# Websocket event types
+DIFF_EVENT_TYPE = "update"
+TRADE_EVENT_TYPE = "tradeHistoryApi"
+SNAPSHOT_EVENT_TYPE = "snapshotL1"
+
 # Order States
 ORDER_STATE = {
     "ORDER_INSERTED": 2,
@@ -68,11 +73,6 @@ ORDER_STATE = {
     "STATUS_INACTIVE": OrderState.CANCELED,
     "STATUS_ACTIVE": OrderState.OPEN
 }
-
-# Websocket event types
-DIFF_EVENT_TYPE = "update"
-TRADE_EVENT_TYPE = "tradeHistoryApi"
-SNAPSHOT_EVENT_TYPE = "snapshotL1"
 
 # Rate Limit Type
 ORDERS_PER_API = 'ORDERS_PER_API'

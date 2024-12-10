@@ -159,17 +159,6 @@ class BtseExchange(ExchangePyBase):
             domain=self.domain,
         )
 
-    def _get_fee(self,
-                 base_currency: str,
-                 quote_currency: str,
-                 order_type: OrderType,
-                 order_side: TradeType,
-                 amount: Decimal,
-                 price: Decimal = s_decimal_NaN,
-                 is_maker: Optional[bool] = None) -> TradeFeeBase:
-        is_maker = order_type is OrderType.LIMIT_MAKER
-        return DeductedFromReturnsTradeFee(percent=self.estimate_fee_pct(is_maker))
-
     async def _place_order(self,
                            order_id: str,
                            trading_pair: str,
@@ -209,6 +198,17 @@ class BtseExchange(ExchangePyBase):
                 raise
         return o_id, transact_time
 
+
+    def _get_fee(self,
+                 base_currency: str,
+                 quote_currency: str,
+                 order_type: OrderType,
+                 order_side: TradeType,
+                 amount: Decimal,
+                 price: Decimal = s_decimal_NaN,
+                 is_maker: Optional[bool] = None) -> TradeFeeBase:
+        is_maker = order_type is OrderType.LIMIT_MAKER
+        return DeductedFromReturnsTradeFee(percent=self.estimate_fee_pct(is_maker))
     async def _place_cancel(self, order_id: str, tracked_order: InFlightOrder):
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=tracked_order.trading_pair)
         api_params = {
@@ -326,15 +326,15 @@ class BtseExchange(ExchangePyBase):
                     self.logger().exception(f"Error parsing the trading pair rule {rule}. Skipping.")
         return retval
 
-    async def _status_polling_loop_fetch_updates(self):
-        await self._update_order_fills_from_trades()
-        await super()._status_polling_loop_fetch_updates()
-
     async def _update_trading_fees(self):
         """
         Update fees information from the exchange
         """
         pass
+
+    async def _status_polling_loop_fetch_updates(self):
+        await self._update_order_fills_from_trades()
+        await super()._status_polling_loop_fetch_updates()
 
     async def _user_stream_event_listener(self):
         """
