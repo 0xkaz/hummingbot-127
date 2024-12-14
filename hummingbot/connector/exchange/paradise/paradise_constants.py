@@ -3,7 +3,7 @@ from hummingbot.core.data_type.in_flight_order import OrderState
 
 DEFAULT_DOMAIN = "paradise_main"
 
-HBOT_ORDER_ID_PREFIX = "c-RISPYUKI"
+HBOT_ORDER_ID_PREFIX = "HBOT"
 MAX_ORDER_ID_LEN = 32
 
 # Base URL
