@@ -57,7 +57,6 @@ class ETHKeyFileSecretManger(BaseSecretsManager):
         if self._password is None:
             raise ValueError(f"Could not decrypt secret attribute {attr} because no password was provided.")
         value = binascii.unhexlify(value)
-        print("Value -->", value)
         decrypted_value = Account.decrypt(value.decode(), self._password).decode()
         return decrypted_value
 
