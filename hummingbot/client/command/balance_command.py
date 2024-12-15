@@ -88,14 +88,14 @@ class BalanceCommand:
             self.notify("\nA network error prevented the balances to update. See logs for more details.")
             raise
         all_ex_avai_bals = UserBalances.instance().all_available_balances_all_exchanges()
-        
-        self.notify(f"all_ex_avai_bals: {all_ex_avai_bals}:")
 
         exchanges_total = 0
 
         for exchange, bals in all_ex_bals.items():
             self.notify(f"\n{exchange}:")
+            self.notify(f"Here:")
             df, allocated_total = await self.exchange_balances_extra_df(exchange, bals, all_ex_avai_bals.get(exchange, {}))
+            self.notify(f"\n{df}{allocated_total}:")
             if df.empty:
                 self.notify("You have no balance on this exchange.")
             else:
