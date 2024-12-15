@@ -84,10 +84,13 @@ class BalanceCommand:
             all_ex_bals = await asyncio.wait_for(
                 UserBalances.instance().all_balances_all_exchanges(self.client_config_map), network_timeout
             )
+            self.notify(f"all_ex_bals: {all_ex_bals.items()}:")
         except asyncio.TimeoutError:
             self.notify("\nA network error prevented the balances to update. See logs for more details.")
             raise
         all_ex_avai_bals = UserBalances.instance().all_available_balances_all_exchanges()
+        
+        self.notify(f"all_ex_avai_bals: {all_ex_avai_bals}:")
 
         exchanges_total = 0
 
