@@ -274,29 +274,37 @@ class ClientOrderTracker:
         tracked_order: Optional[InFlightOrder] = self.fetch_order(
             order_update.client_order_id, order_update.exchange_order_id
         )
+        
+        print("_process_order_update: tracked_order", tracked_order)
 
         if tracked_order:
             if order_update.new_state == OrderState.FILLED and not tracked_order.is_done:
                 try:
+                    print("_process_order_update: 283 here")
                     await asyncio.wait_for(
                         tracked_order.wait_until_completely_filled(), timeout=self.TRADE_FILLS_WAIT_TIMEOUT
                     )
                 except asyncio.TimeoutError:
+                    print("_process_order_update: 288 here")
                     self.logger().warning(
                         f"The order fill updates did not arrive on time for {tracked_order.client_order_id}. "
                         f"The complete update will be processed with incomplete information."
                     )
-
+            print("_process_order_update: 293 here")
             previous_state: OrderState = tracked_order.current_state
 
             updated: bool = tracked_order.update_with_order_update(order_update)
             if updated:
+                print("_process_order_update: 298 here")
                 self._trigger_order_creation(tracked_order, previous_state, order_update.new_state)
                 self._trigger_order_completion(tracked_order, order_update)
+                print("_process_order_update: 301 here")
         else:
+            print("_process_order_update: 303 here")
             lost_order = self.fetch_lost_order(
                 client_order_id=order_update.client_order_id, exchange_order_id=order_update.exchange_order_id
             )
+            print("_process_order_update: 307 here", lost_order)
             if lost_order:
                 if order_update.new_state in [OrderState.CANCELED, OrderState.FILLED, OrderState.FAILED]:
                     # If the order officially reaches a final state after being lost it should be removed from the lost list
