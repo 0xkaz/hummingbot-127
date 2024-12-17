@@ -976,9 +976,9 @@ class ExchangePyBase(ExchangeBase, ABC):
         except asyncio.CancelledError:
             raise
         except Exception as request_error:
-            self.logger().warning(
-                f"Error fetching status update for the active order {order.client_order_id}: {request_error}.",
-            )
+            # self.logger().warning(
+            #     f"Error fetching status update for the active order {order.client_order_id}: {request_error}.",
+            # )
             self.logger().debug(f"Order {order.client_order_id} not found counter: {self._order_tracker._order_not_found_records.get(order.client_order_id, 0)}")
             await self._order_tracker.process_order_not_found(order.client_order_id)
 
