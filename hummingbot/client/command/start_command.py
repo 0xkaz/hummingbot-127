@@ -99,7 +99,8 @@ class StartCommand(GatewayChainApiManager):
                     self.strategy_name = None
                     self.strategy_file_name = None
                     raise
-
+        print("start_check -> script: ", script)
+        print("start_check -> conf: ", conf)
         if script:
             file_name = script.split(".")[0]
             self.strategy_name = file_name
@@ -189,6 +190,7 @@ class StartCommand(GatewayChainApiManager):
 
     def start_script_strategy(self):
         script_strategy, config = self.load_script_class()
+        print("start_script_strategy-> script_strategy, config ", script_strategy, config)
         markets_list = []
         for conn, pairs in script_strategy.markets.items():
             markets_list.append((conn, list(pairs)))
@@ -276,6 +278,7 @@ class StartCommand(GatewayChainApiManager):
             self.logger().error(str(e), exc_info=True)
 
     def _initialize_strategy(self, strategy_name: str):
+        print("_initialize_strategy --> file-exist ", self.is_current_strategy_script_strategy())
         if self.is_current_strategy_script_strategy():
             self.start_script_strategy()
         else:
