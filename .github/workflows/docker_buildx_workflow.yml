@@ -1,6 +1,8 @@
 name: Client Docker Buildx Workflow
 
 on:
+  push:
+    branches: [main, master, development, 'docker', 'feat/**']
   pull_request:
     types: [closed]
     branches:
