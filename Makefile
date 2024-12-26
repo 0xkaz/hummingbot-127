@@ -39,7 +39,7 @@ docker:
 	git clean -xdf && make clean && docker build -t rakd/hummingbot${TAG} -f Dockerfile .
 
 dockerpush:
-	docker push rakd/hummingbot-gateway
+	docker push rakd/hummingbot
 
 clean:
 	./clean
