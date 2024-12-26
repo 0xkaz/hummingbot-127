@@ -1,10 +1,20 @@
 # Set the base image
 FROM continuumio/miniconda3:latest AS builder
+# FROM continuumio/miniconda3:24.7.1-0 AS builder
 
 # Install system dependencies
-RUN apt-get update 
+
+# RUN apt-get update
+
 # RUN apt update 
-RUN apt-get install -y sudo libusb-1.0 gcc g++ python3-dev 
+# RUN apt-get install -y sudo libusb-1.0 gcc g++ python3-dev 
+# RUN rm -rf /var/lib/apt/lists/*
+
+RUN apt-get install -y sudo 
+RUN apt-get install -y libusb-1.0 
+RUN apt-get install -y g++ 
+RUN apt-get install -y python3-dev 
+RUN apt-get install -y gcc
 RUN rm -rf /var/lib/apt/lists/*
 
 WORKDIR /home/hummingbot
@@ -36,7 +46,8 @@ RUN python3 setup.py build_ext --inplace -j 8 && \
 
 
 # Build final image using artifacts from builder
-FROM continuumio/miniconda3:latest AS release
+# FROM continuumio/miniconda3:latest AS release
+FROM continuumio/miniconda3:24.7.1-0 AS release
 
 # Dockerfile author / maintainer
 LABEL maintainer="Fede Cardoso @dardonacci <federico@hummingbot.org>"
@@ -57,9 +68,16 @@ ENV BUILD_DATE=${DATE}
 ENV INSTALLATION_TYPE=docker
 
 # Install system dependencies
-RUN apt-get update && \
-    apt-get install -y sudo libusb-1.0 && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update
+
+# RUN apt-get update && \
+#     apt-get install -y sudo libusb-1.0 && \
+#     rm -rf /var/lib/apt/lists/*
+
+
+RUN apt-get install -y sudo
+RUN apt-get install -y libusb-1.0 
+RUN rm -rf /var/lib/apt/lists/*
 
 # Create mount points
 RUN mkdir -p /home/hummingbot/conf /home/hummingbot/conf/connectors /home/hummingbot/conf/strategies /home/hummingbot/conf/controllers /home/hummingbot/conf/scripts /home/hummingbot/logs /home/hummingbot/data /home/hummingbot/certs /home/hummingbot/scripts /home/hummingbot/controllers
