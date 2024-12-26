@@ -100,9 +100,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract tag name
-        id: get_tag
-        run: echo ::set-output name=VERSION::version-${GITHUB_REF#refs/tags/v}  
+      # - name: Extract tag name
+      #   id: get_tag
+      #   run: echo ::set-output name=VERSION::version-${GITHUB_REF#refs/tags/v}  
 
       - name: Build and push
         uses: docker/build-push-action@v5
@@ -110,4 +110,5 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: rakd/hummingbot:${{ steps.get_tag.outputs.VERSION }}
+          tags: rakd/hummingbot:latest
+
