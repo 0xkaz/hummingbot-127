@@ -1,29 +1,24 @@
-# Set the base image
-FROM continuumio/miniconda3:latest AS builder
-# FROM continuumio/miniconda3:24.7.1-0 AS builder
+FROM continuumio/miniconda3:23.5.2-0-alpine AS builder
+
+RUN apk update
+RUN apk upgrade
 
 # Install system dependencies
-
-# RUN apt-get update
-
-# RUN apt update 
-# RUN apt-get install -y sudo libusb-1.0 gcc g++ python3-dev 
-# RUN rm -rf /var/lib/apt/lists/*
-
-RUN apt-get install -y sudo 
-RUN apt-get install -y libusb-1.0 
-RUN apt-get install -y g++ 
-RUN apt-get install -y python3-dev 
-RUN apt-get install -y gcc
-RUN rm -rf /var/lib/apt/lists/*
+RUN apk add sudo 
+RUN apk add git
+RUN apk add libusb
+RUN apk add g++ 
+RUN apk add  python3-dev 
+RUN apk add  python3 
+RUN apk add gcc
 
 WORKDIR /home/hummingbot
 
 # Create conda environment
 COPY setup/environment.yml /tmp/environment.yml
-RUN conda env create -f /tmp/environment.yml && \
-    conda clean -afy && \
-    rm /tmp/environment.yml
+RUN conda env create -f /tmp/environment.yml
+# RUN conda clean -afy 
+RUN rm /tmp/environment.yml
 
 # Copy remaining files
 COPY bin/ bin/
@@ -45,12 +40,17 @@ RUN python3 setup.py build_ext --inplace -j 8 && \
     find . -type f -name "*.cpp" -delete
 
 
-# Build final image using artifacts from builder
-# FROM continuumio/miniconda3:latest AS release
-FROM continuumio/miniconda3:24.7.1-0 AS release
+# FROM continuumio/miniconda3:4.10.3p0-alpine AS release
+FROM continuumio/miniconda3:23.5.2-0-alpine AS release
 
-# Dockerfile author / maintainer
-LABEL maintainer="Fede Cardoso @dardonacci <federico@hummingbot.org>"
+RUN apk update
+RUN apk upgrade
+RUN apk add g++ 
+RUN apk add  python3-dev 
+RUN apk add gcc
+RUN apk add git
+RUN apk add sudo 
+RUN apk add libusb
 
 # Build arguments
 ARG BRANCH=""
@@ -67,17 +67,6 @@ ENV BUILD_DATE=${DATE}
 
 ENV INSTALLATION_TYPE=docker
 
-# Install system dependencies
-RUN apt-get update
-
-# RUN apt-get update && \
-#     apt-get install -y sudo libusb-1.0 && \
-#     rm -rf /var/lib/apt/lists/*
-
-
-RUN apt-get install -y sudo
-RUN apt-get install -y libusb-1.0 
-RUN rm -rf /var/lib/apt/lists/*
 
 # Create mount points
 RUN mkdir -p /home/hummingbot/conf /home/hummingbot/conf/connectors /home/hummingbot/conf/strategies /home/hummingbot/conf/controllers /home/hummingbot/conf/scripts /home/hummingbot/logs /home/hummingbot/data /home/hummingbot/certs /home/hummingbot/scripts /home/hummingbot/controllers
