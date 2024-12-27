@@ -4,13 +4,17 @@ RUN apk update
 RUN apk upgrade
 
 # Install system dependencies
-RUN apk add sudo 
-RUN apk add git
-RUN apk add libusb
-RUN apk add g++ 
-RUN apk add  python3-dev 
-RUN apk add  python3 
-RUN apk add gcc
+RUN apk add --no-cache \
+    sudo \
+    git \
+    libusb \
+    g++ \
+    python3-dev \
+    python3 \
+    gcc \
+    linux-headers \
+    musl-dev \
+    make
 
 WORKDIR /home/hummingbot
 
@@ -43,14 +47,17 @@ RUN python3 setup.py build_ext --inplace -j 8 && \
 # FROM continuumio/miniconda3:4.10.3p0-alpine AS release
 FROM continuumio/miniconda3:23.5.2-0-alpine AS release
 
-RUN apk update
-RUN apk upgrade
-RUN apk add g++ 
-RUN apk add  python3-dev 
-RUN apk add gcc
-RUN apk add git
-RUN apk add sudo 
-RUN apk add libusb
+RUN apk update && apk upgrade && \
+    apk add --no-cache \
+    g++ \
+    python3-dev \
+    gcc \
+    git \
+    sudo \
+    libusb \
+    linux-headers \
+    musl-dev \
+    make
 
 # Build arguments
 ARG BRANCH=""
