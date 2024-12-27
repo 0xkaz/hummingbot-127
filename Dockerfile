@@ -21,7 +21,7 @@ WORKDIR /home/hummingbot
 # Create conda environment
 COPY setup/environment.yml /tmp/environment.yml
 RUN conda env create -f /tmp/environment.yml
-# RUN conda clean -afy 
+RUN conda clean -afy 
 RUN rm /tmp/environment.yml
 
 # Copy remaining files
@@ -39,9 +39,12 @@ COPY DATA_COLLECTION.md .
 SHELL [ "/bin/bash", "-lc" ]
 RUN echo "conda activate hummingbot" >> ~/.bashrc
 
-RUN python3 setup.py build_ext --inplace -j 8 && \
-    rm -rf build/ && \
-    find . -type f -name "*.cpp" -delete
+RUN pip3 install numpy
+RUN pip3 install cython
+
+RUN python3 setup.py build_ext --inplace -j 8 
+RUN rm -rf build/ 
+RUN find . -type f -name "*.cpp" -delete
 
 
 # FROM continuumio/miniconda3:4.10.3p0-alpine AS release
@@ -51,6 +54,8 @@ RUN apk update && apk upgrade && \
     apk add --no-cache \
     g++ \
     python3-dev \
+    bash \
+    zsh \
     gcc \
     git \
     sudo \
