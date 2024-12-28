@@ -37,7 +37,7 @@ development-diff-cover:
 
 docker:
 	git clean -xdf && make clean && docker build  --platform linux/amd64 -t rakd/hummingbot${TAG} -f Dockerfile .
-	docker tag 	rakd/hummingbot${TAG} ghcr.io/rakd/hummingbot${TAG}
+	docker tag 	rakd/hummingbot${TAG} ghcr.io/0xkaz/hummingbot${TAG}
 
 
 dockerpush: docker
@@ -45,7 +45,7 @@ dockerpush: docker
 	
 dockerpush2: docker
 	echo $CR_PAT | docker login ghcr.io -u $GUSERNAME --password-stdin
-	docker push ghcr.io/rakd/hummingbot${TAG}
+	docker push ghcr.io/0xkaz/hummingbot${TAG}
 
 clean:
 	./clean
